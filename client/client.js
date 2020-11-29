@@ -15,7 +15,7 @@ function onYouTubeIframeAPIReady() {
   player = new YT.Player('player', {
     height: 2 * (window.innerHeight / 3),
     width: 2 * (window.innerWidth / 3),
-    videoId: '_orpeenBXVk',
+    videoId: 'H45U4FL_pQM',
     playerVars: { 'controls': 0, 'disablekb': 1 },
     events: {
       'onReady': onPlayerReady,
@@ -26,6 +26,7 @@ function onYouTubeIframeAPIReady() {
 
 //ELEMENTS
 let txtIsStarted = document.getElementById('txtIsStarted');
+let initUrlWrapper = document.getElementById('initUrlWrapper');
 let playerDiv;
 //END ELEMENTS
 
@@ -43,6 +44,8 @@ setInterval(function () {
 
 
 //CONNECTION
+let settingPaused = false;
+let setPause = false;
 let loading = false;
 let starting = false;
 let settingTime = false;
@@ -52,37 +55,45 @@ let recievedPause = false;
 
 socket.on('isStarted', function (data) {
   if (data) txtIsStarted.innerText = "Join";
-  else txtIsStarted.innerText = "Start";
+  else{
+    txtIsStarted.innerText = "Start";
+    initUrlWrapper.classList.remove('d-none');
+  } 
 });
 
 socket.on('hostChosen', function () {
+  initUrlWrapper.classList.add('d-none');
   txtIsStarted.innerText = "Join";
+});
+
+socket.on('hostDisconnected', function () {
+  initUrlWrapper.classList.remove('d-none');
+  txtIsStarted.innerText = "Start";
 });
 
 socket.on('pauseVideo', function () {
   recievedPause = true;
-  pauseVideo();
-});
-
-socket.on('stopVideo', function () {
-  player.stopVideo();
+  player.pauseVideo();
 });
 
 socket.on('startVideo', function (data) {
   if (!data) {
     starting = true;
     startVideo();
-  }
-  else {
+  }else {
+    if(data.state!=1) setPause = true;
     timeToSet = data.time;
     timeStamp = data.timeStamp;
     startVideo();
-
   }
 });
 
 socket.on('getHostTime', function (data) {
-  socket.emit('recievedHostTime', { socketId: data, time: player.getCurrentTime(), timeStamp: Date.now() });
+  if(data=="all"){
+    socket.emit('recievedHostTimeForAll', { time: player.getCurrentTime(), timeStamp: Date.now(), state: player.getPlayerState() });
+  } else {
+    socket.emit('recievedHostTime', { socketId: data, time: player.getCurrentTime(), timeStamp: Date.now(), state: player.getPlayerState() });
+  }
 });
 //END CONNECTION
 
@@ -100,11 +111,15 @@ function onPlayerStateChange(event) {
   }
 
   if (event.data == YT.PlayerState.PLAYING) {
+    if(setPause){
+      player.pauseVideo();
+      setPause = false;
+      settingPaused = true;
+    }
     if (loading) {
       document.getElementById('time').value = 0;
       loading = false;
     }
-    console.log(settingTime)
     if (timeToSet) {
       let diffence = (Date.now() - timeStamp) / 1000;
       let curTime = timeToSet + diffence;
@@ -112,9 +127,11 @@ function onPlayerStateChange(event) {
       player.seekTo(curTime, true);
       document.getElementById('time').value = curTime / player.getDuration() * 1000;
       timeToSet = null;
-      settingTime = true;
+      if(!settingPaused)settingTime = true;
+      else settingPaused = false;
       return;
-    } else if (!starting && !settingTime) {
+    } 
+    if (!starting && !settingTime) {
       socket.emit('playVideo', { time: player.getCurrentTime(), timeStamp: Date.now() });
       return;
     }
@@ -125,6 +142,7 @@ function onPlayerStateChange(event) {
   if (event.data == YT.PlayerState.ENDED) {
     loading = true;
     player.loadVideoById("nYIbDAW950s", 0);
+    //broadcast command to load new video
   }
 
 
@@ -151,22 +169,13 @@ function addToQueue() {
 
 //ACTIONS
 function startVideo() {
-  player.playVideo();
   player.seekTo(0, true);
+  player.playVideo();
   player.setVolume(100);
   document.getElementById('playerWrapper').classList.remove('d-none');
   document.getElementById('initWrapper').classList.add('d-none');
   playerDiv = document.getElementById("player");
 
-}
-
-function playVideo(hostTime) {
-  player.playVideo();
-  player.seekTo(hostTime, true);
-}
-
-function pauseVideo() {
-  player.pauseVideo();
 }
 //END ACTIONS
 
@@ -180,8 +189,6 @@ yBar.addEventListener('mousedown', function (e) {
   e.preventDefault();
   yPrev = e.clientY;
   window.addEventListener('mousemove', reSize);
-
-
 });
 
 window.addEventListener('mouseup', function (e) {
