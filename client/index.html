@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <link rel="stylesheet" href="/client/index.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.js"
+        integrity="sha512-Jr0UIR/Q8MUX+93zjDOhuDUKLqJZObtwpkLJQcR9qMaLgL0thet39IORuavUaZFkZ8a4ktrUsKPM9mf5LWMduA=="
+        crossorigin="anonymous"></script>
+    <script src="/client/client.js" defer></script>
+</head>
+
+<body>
+    <div class="container justify-content-center">
+
+        <div class="row justify-content-center mt-5">
+            <div class="col-12 text-center">
+                <h1>Joshua's YouTube Player</h1>
+            </div>
+        </div>
+
+        <div id="playerWrapper" class="mt-5 d-none">
+            <div id="playerRow" class="row justify-content-center">
+                <div id="player" class="shadow"></div>
+            </div>
+            <div class="row text-center text-muted mt-3">
+                <div class="col-3">
+
+                </div>
+                <div class="col-6">
+                    <div id="ySizeBar" class="bg-medium w-100 pt-1 pb-1 rounded-pill clip border-thick">
+                            
+                    </div>
+                </div>
+                <div class="col-3 text-center mt-2">
+                    (double click for full screen)
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <input id="time" class="w-50 mt-5" type="range" min="0" max="1000" value="0" id="slidebar" onchange="setTime()">
+            </div>
+        </div>
+        
+
+    <div id="initWrapper" class="row justify-content-center mt-5">
+        <button class="btn-primary btn rounded-pill shadow" onclick="startOrJoin()">
+            <h4 id="txtIsStarted">loading...</h4>
+        </button>
+    </div>
+
+    <div class="row mt-6 justify-content-center">
+        <div class="col-8 queuebox border-dark border">
+
+        </div>
+    </div>
+
+    <div class="row mt-4 mb-6 justify-content-center">
+        <div class="col-6">
+            <form>
+                <input id="addToQueue" class="w-100" type="text" placeholder="Add To Queue">
+            </form>
+        </div>
+        <div class="col-2">
+            <button class="w-100 text-center" onclick="skipVideo()">Skip Video</button>
+        </div>
+    </div>
+    </div>
+
+</body>
+
+</html>

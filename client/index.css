@@ -1,0 +1,36 @@
+
+.queuebox{
+    height: 300px;
+    overflow-y: scroll;
+}
+
+.mt-6{
+    margin-top: 8rem;
+}
+
+.mb-6{
+    margin-bottom: 8rem;
+}
+
+.bg-medium{
+    background-color: rgba(150, 150, 170, 0.5);
+    
+}
+
+.border-thick{
+    border: 20px solid transparent;
+}
+
+.clip{
+    background-clip: padding-box;
+}
+
+#ySizeBar{
+    height: 0.75rem;
+    cursor: ns-resize;
+}
+
+#xSizeBar{
+    width: 100px;
+    cursor: e-resize;
+}
