@@ -35,11 +35,11 @@
 
                 </div>
                 <div class="col-6">
-                    <div id="ySizeBar" class="bg-medium w-100 pt-1 pb-1 rounded-pill clip border-thick">
+                    <div id="ySizeBar" class="bg-medium w-100 pt-1 pb-1 rounded-pill clip border-thick d-none d-lg-block">
 
                     </div>
                 </div>
-                <div class="col-3 text-center mt-2">
+                <div class="col-3 text-center mt-2 d-none d-lg-block">
                     (double click for full screen)
                 </div>
             </div>
@@ -59,7 +59,11 @@
                     </div>
                 </div>
             </div>
-
+            <div id="initLabelWrapper" class="row justify-content-center mt-3 d-none">
+                <div class="col-8 text-center">
+                    <h5 id="txtInitLabel">loading...</h5>
+                </div>
+            </div>
             <div id="initBtnWrapper" class="row justify-content-center mt-3">
                 <button class="btn-primary btn rounded-pill shadow" onclick="startOrJoin()">
                     <h4 id="txtIsStarted">loading...</h4>
@@ -67,31 +71,33 @@
             </div>
         </div>
 
-
-        <div class="row mt-6 justify-content-center">
-            <div class="col-7"></div>
-            <div class="col-2">
-                <button id="btnSkipVideo" class="col-8 btn-secondary rounded shadow w-100 p-0" onclick="skipVideo()">Skip Video</button>
+        <div id="queuBoxWrapper" class="d-none">
+            <div class="row mt-6 justify-content-center">
+                <div class="col-lg-7 col-6"></div>
+                <div class="col-lg-2 col-6">
+                    <button id="btnSkipVideo" class="col-8 btn-secondary rounded shadow w-100 p-0" onclick="skipVideo()">Skip Video</button>
+                </div>
+            </div>
+            <div class="row mt-3 justify-content-center">
+                <div id="queueBox" class="col-8 queuebox border-dark border"></div>
+            </div>
+    
+            <div class="row justify-content-center">
+                <div class="col-lg-3 col-12 mt-4">
+                    <input id="tbVidUrl" class="w-100" type="text" placeholder="URL">
+                </div>
+                <div class="col-lg-3 col-12 mt-4">
+                    <input id="tbVidTitle" class="w-100" type="text" placeholder="Title">
+                </div>
+                <div class="col-lg-2 col-8 mt-4">
+                    <button id="btnAddToQueue" class="w-100 text-center rounded shadow btn-secondary" onclick="addToQueue()">Add To Queue</button>
+                </div>
+            </div>
+            <div class="row mt-3 mb-6 justify-content-center">
+                <div id="queueErrorMessage" class="col-8 text-center mb-2 text-danger"></div>
             </div>
         </div>
-        <div class="row mt-3 justify-content-center">
-            <div id="queueBox" class="col-8 queuebox border-dark border"></div>
-        </div>
-
-        <div class="row mt-4 justify-content-center">
-            <div class="col-3">
-                <input id="tbVidUrl" class="w-100" type="text" placeholder="URL">
-            </div>
-            <div class="col-3">
-                <input id="tbVidTitle" class="w-100" type="text" placeholder="Title">
-            </div>
-            <div class="col-2">
-                <button id="btnAddToQueue" class="w-100 text-center rounded shadow btn-secondary" onclick="addToQueue()">Add To Queue</button>
-            </div>
-        </div>
-        <div class="row mt-3 mb-6 justify-content-center">
-            <div id="queueErrorMessage" class="col-8 text-center mb-2 text-danger"></div>
-        </div>
+        
     </div>
 
 </body>

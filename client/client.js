@@ -12,6 +12,20 @@ firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 let player;
 let iframe;
 function onYouTubeIframeAPIReady() {
+
+  if (window.innerWidth < 992) {
+    player = new YT.Player('player', {
+      height: window.innerWidth*0.75,
+      width: window.innerWidth,
+      videoId: 'H45U4FL_pQM',
+      events: {
+        'onReady': onPlayerReady,
+        'onStateChange': onPlayerStateChange
+      }
+    });
+    return;
+  }
+
   player = new YT.Player('player', {
     height: 2 * (window.innerHeight / 3),
     width: 2 * (window.innerWidth / 3),
@@ -31,8 +45,11 @@ let initUrl = document.getElementById("initUrl");
 let errorMessage = document.getElementById("errorMessage");
 let queueErrorMessage = document.getElementById("queueErrorMessage");
 let tbVidTitle = document.getElementById("tbVidTitle");
-let tbVidUrl =  document.getElementById("tbVidUrl");
+let tbVidUrl = document.getElementById("tbVidUrl");
 let queueBox = document.getElementById("queueBox");
+let initLabelWrapper = document.getElementById("initLabelWrapper");
+let txtInitLabel = document.getElementById("txtInitLabel");
+let queuBoxWrapper = document.getElementById("queuBoxWrapper");
 let playerDiv;
 //END ELEMENTS
 
@@ -50,35 +67,45 @@ let timeStamp = null;
 let recievedPause = false;
 
 socket.on('isStarted', function (data) {
-  if (data) txtIsStarted.innerText = "Join";
+  if (data.isStarted) {
+    txtIsStarted.innerText = "Join";
+    initLabelWrapper.classList.remove('d-none');
+    if (data.userCount == 1) txtInitLabel.innerText = "1 user watching";
+    else txtInitLabel.innerText = data.userCount + " users watching";
+
+  }
   else {
     txtIsStarted.innerText = "Start";
     initUrlWrapper.classList.remove('d-none');
   }
 });
 
-socket.on('hostChosen', function () {
+socket.on('hostChosen', function (data) {
   initUrlWrapper.classList.add('d-none');
+  initLabelWrapper.classList.remove('d-none');
   txtIsStarted.innerText = "Join";
+  if (data.userCount == 1) txtInitLabel.innerText = "1 user watching";
+  else txtInitLabel.innerText = data.userCount + " users watching";
 });
 
 socket.on('hostDisconnected', function () {
   initUrlWrapper.classList.remove('d-none');
+  initLabelWrapper.classList.add('d-none');
   txtIsStarted.innerText = "Start";
 });
 
-socket.on('invalidUrl', function(){
+socket.on('invalidUrl', function () {
   errorMessage.innerText = "Invalid URL";
 });
 
-socket.on('invalidQueueUrl', function(){
+socket.on('invalidQueueUrl', function () {
   queueErrorMessage.innerText = "Invalid URL";
   tbVidTitle.value = "";
   tbVidUrl.value = "";
 });
 
-socket.on('loadQueue', function(data){
-  for(let i=1; i<data.length; i++){
+socket.on('loadQueue', function (data) {
+  for (let i = 1; i < data.length; i++) {
     let titleDiv = document.createElement('h5');
     titleDiv.classList = "mt-2 ml-4"
     titleDiv.innerText = data[i].title;
@@ -86,7 +113,7 @@ socket.on('loadQueue', function(data){
   }
 });
 
-socket.on('videoAddedToQueue', function(data){
+socket.on('videoAddedToQueue', function (data) {
   tbVidTitle.value = "";
   tbVidUrl.value = "";
   let titleDiv = document.createElement('h5');
@@ -95,7 +122,7 @@ socket.on('videoAddedToQueue', function(data){
   queueBox.appendChild(titleDiv);
 });
 
-socket.on('queueShifted', function(){
+socket.on('queueShifted', function () {
   queueBox.removeChild(queueBox.childNodes[0]);
 });
 
@@ -105,23 +132,27 @@ socket.on('pauseVideo', function () {
 });
 
 socket.on('startVideo', function (data) {
-  if (!data.state) {
-    starting = true;
-    if(data.videoId){
-      player.loadVideoById(data.videoId, 0);
-      loading = true;
-    } 
-    startVideo();
-  } else {
-    if(data.videoId){
-      player.loadVideoById(data.videoId, 0);
-      loading = true;
-    } 
-    if (data.state != 1) setPause = true;
-    timeToSet = data.time;
-    timeStamp = data.timeStamp;
-    startVideo();
+  if (player.loadVideoById) {
+    queuBoxWrapper.classList.remove("d-none");
+    if (!data.state) {
+      starting = true;
+      if (data.videoId) {
+        player.loadVideoById(data.videoId, 0);
+        loading = true;
+      }
+      startVideo();
+    } else {
+      if (data.videoId) {
+        player.loadVideoById(data.videoId, 0);
+        loading = true;
+      }
+      if (data.state != 1) setPause = true;
+      timeToSet = data.time;
+      timeStamp = data.timeStamp;
+      startVideo();
+    }
   }
+
 });
 
 socket.on('loadNextVideoForHost', function (data) {
@@ -150,7 +181,7 @@ function onPlayerStateChange(event) {
 
   if (event.data == YT.PlayerState.PAUSED) {
     if (!recievedPause && !loading) socket.emit('pauseVideo');
-    else{
+    else {
       recievedPause = false;
       loading = false;
     }
@@ -206,7 +237,7 @@ function addToQueue() {
   let title = tbVidTitle.value;
   let url = tbVidUrl.value;
 
-  socket.emit('addToQueue', {url: url, title: title});
+  socket.emit('addToQueue', { url: url, title: title });
 }
 //END CONTROLS
 
