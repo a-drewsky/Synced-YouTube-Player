@@ -16,7 +16,6 @@ function onYouTubeIframeAPIReady() {
     height: 2 * (window.innerHeight / 3),
     width: 2 * (window.innerWidth / 3),
     videoId: 'H45U4FL_pQM',
-    playerVars: { 'controls': 0, 'disablekb': 1 },
     events: {
       'onReady': onPlayerReady,
       'onStateChange': onPlayerStateChange
@@ -24,23 +23,20 @@ function onYouTubeIframeAPIReady() {
   });
 }
 
+
 //ELEMENTS
 let txtIsStarted = document.getElementById('txtIsStarted');
 let initUrlWrapper = document.getElementById('initUrlWrapper');
+let initUrl = document.getElementById("initUrl");
+let errorMessage = document.getElementById("errorMessage");
+let queueErrorMessage = document.getElementById("queueErrorMessage");
+let tbVidTitle = document.getElementById("tbVidTitle");
+let tbVidUrl =  document.getElementById("tbVidUrl");
+let queueBox = document.getElementById("queueBox");
 let playerDiv;
 //END ELEMENTS
 
 
-//TIME BAR
-setInterval(function () {
-
-  let curTime = player.getCurrentTime() / player.getDuration() * 1000;
-
-  let scrolling = curTime < document.getElementById('time').value || curTime - 1 - 1000 / player.getDuration() > document.getElementById('time').value;
-
-  if (!scrolling) document.getElementById('time').value = player.getCurrentTime() / player.getDuration() * 1000;
-}, 1000);
-//END TIME BAR
 
 
 //CONNECTION
@@ -55,10 +51,10 @@ let recievedPause = false;
 
 socket.on('isStarted', function (data) {
   if (data) txtIsStarted.innerText = "Join";
-  else{
+  else {
     txtIsStarted.innerText = "Start";
     initUrlWrapper.classList.remove('d-none');
-  } 
+  }
 });
 
 socket.on('hostChosen', function () {
@@ -71,25 +67,72 @@ socket.on('hostDisconnected', function () {
   txtIsStarted.innerText = "Start";
 });
 
+socket.on('invalidUrl', function(){
+  errorMessage.innerText = "Invalid URL";
+});
+
+socket.on('invalidQueueUrl', function(){
+  queueErrorMessage.innerText = "Invalid URL";
+  tbVidTitle.value = "";
+  tbVidUrl.value = "";
+});
+
+socket.on('loadQueue', function(data){
+  for(let i=1; i<data.length; i++){
+    let titleDiv = document.createElement('h5');
+    titleDiv.classList = "mt-2 ml-4"
+    titleDiv.innerText = data[i].title;
+    queueBox.appendChild(titleDiv);
+  }
+});
+
+socket.on('videoAddedToQueue', function(data){
+  tbVidTitle.value = "";
+  tbVidUrl.value = "";
+  let titleDiv = document.createElement('h5');
+  titleDiv.classList = "mt-2 ml-4"
+  titleDiv.innerText = data;
+  queueBox.appendChild(titleDiv);
+});
+
+socket.on('queueShifted', function(){
+  queueBox.removeChild(queueBox.childNodes[0]);
+});
+
 socket.on('pauseVideo', function () {
   recievedPause = true;
   player.pauseVideo();
 });
 
 socket.on('startVideo', function (data) {
-  if (!data) {
+  if (!data.state) {
     starting = true;
+    if(data.videoId){
+      player.loadVideoById(data.videoId, 0);
+      loading = true;
+    } 
     startVideo();
-  }else {
-    if(data.state!=1) setPause = true;
+  } else {
+    if(data.videoId){
+      player.loadVideoById(data.videoId, 0);
+      loading = true;
+    } 
+    if (data.state != 1) setPause = true;
     timeToSet = data.time;
     timeStamp = data.timeStamp;
     startVideo();
   }
 });
 
+socket.on('loadNextVideoForHost', function (data) {
+  loading = true;
+  player.loadVideoById(data.videoId, 0);
+  socket.emit('hostLoadedVideo', Date.now());
+});
+
+
 socket.on('getHostTime', function (data) {
-  if(data=="all"){
+  if (data == "all") {
     socket.emit('recievedHostTimeForAll', { time: player.getCurrentTime(), timeStamp: Date.now(), state: player.getPlayerState() });
   } else {
     socket.emit('recievedHostTime', { socketId: data, time: player.getCurrentTime(), timeStamp: Date.now(), state: player.getPlayerState() });
@@ -106,18 +149,20 @@ function onPlayerReady(event) {
 function onPlayerStateChange(event) {
 
   if (event.data == YT.PlayerState.PAUSED) {
-    if (!recievedPause) socket.emit('pauseVideo');
-    else recievedPause = false;
+    if (!recievedPause && !loading) socket.emit('pauseVideo');
+    else{
+      recievedPause = false;
+      loading = false;
+    }
   }
 
   if (event.data == YT.PlayerState.PLAYING) {
-    if(setPause){
+    if (setPause) {
       player.pauseVideo();
       setPause = false;
       settingPaused = true;
     }
     if (loading) {
-      document.getElementById('time').value = 0;
       loading = false;
     }
     if (timeToSet) {
@@ -125,12 +170,11 @@ function onPlayerStateChange(event) {
       let curTime = timeToSet + diffence;
       console.log(diffence);
       player.seekTo(curTime, true);
-      document.getElementById('time').value = curTime / player.getDuration() * 1000;
       timeToSet = null;
-      if(!settingPaused)settingTime = true;
+      if (!settingPaused) settingTime = true;
       else settingPaused = false;
       return;
-    } 
+    }
     if (!starting && !settingTime) {
       socket.emit('playVideo', { time: player.getCurrentTime(), timeStamp: Date.now() });
       return;
@@ -140,29 +184,29 @@ function onPlayerStateChange(event) {
   }
 
   if (event.data == YT.PlayerState.ENDED) {
-    loading = true;
-    player.loadVideoById("nYIbDAW950s", 0);
-    //broadcast command to load new video
+    socket.emit('loadNextVideo');
   }
 
 
 }
 
 function startOrJoin() {
-  socket.emit('startOrJoin');
+  errorMessage.innerText = "";
+  socket.emit('startOrJoin', initUrl.value);
 }
 
-function setTime() {
-  var val = document.getElementById('time').value;
-  player.seekTo(val / 1000 * player.getDuration(), true);
-}
+
 
 function skipVideo() {
-
+  socket.emit('loadNextVideo');
 }
 
 function addToQueue() {
+  queueErrorMessage.innerText = "";
+  let title = tbVidTitle.value;
+  let url = tbVidUrl.value;
 
+  socket.emit('addToQueue', {url: url, title: title});
 }
 //END CONTROLS
 

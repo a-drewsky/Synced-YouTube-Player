@@ -4,15 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Joshua's YouTube Player</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
         integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
     <link rel="stylesheet" href="/client/index.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.js"
         integrity="sha512-Jr0UIR/Q8MUX+93zjDOhuDUKLqJZObtwpkLJQcR9qMaLgL0thet39IORuavUaZFkZ8a4ktrUsKPM9mf5LWMduA=="
         crossorigin="anonymous"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
     <script src="/client/client.js" defer></script>
 </head>
+
+<!--add comments and try using player with controls-->
 
 <body>
     <div class="container justify-content-center">
@@ -33,50 +36,62 @@
                 </div>
                 <div class="col-6">
                     <div id="ySizeBar" class="bg-medium w-100 pt-1 pb-1 rounded-pill clip border-thick">
-                            
+
                     </div>
                 </div>
                 <div class="col-3 text-center mt-2">
                     (double click for full screen)
                 </div>
             </div>
-            <div class="row justify-content-center">
-                <input id="time" class="w-50 mt-5" type="range" min="0" max="1000" value="0" id="slidebar" onchange="setTime()">
+
+        </div>
+
+        <div id="initWrapper" class="mt-5">
+            <div id="initUrlWrapper" class=" d-none">
+                <div class="row justify-content-center">
+                    <div id="errorMessage" class="col-8 text-center mb-2 text-danger"></div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-8">
+                        <form>
+                            <input id="initUrl" class="w-100" type="text" placeholder="Starting Video...">
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="initBtnWrapper" class="row justify-content-center mt-3">
+                <button class="btn-primary btn rounded-pill shadow" onclick="startOrJoin()">
+                    <h4 id="txtIsStarted">loading...</h4>
+                </button>
             </div>
         </div>
-        
-    <div id="initWrapper" class="mt-5">
-        <div id="initUrlWrapper" class="row justify-content-center d-none">
-            <div class="col-8">
-                <form>
-                    <input id="initUrl" class="w-100" type="text" placeholder="Starting Video...">
-                </form>
+
+
+        <div class="row mt-6 justify-content-center">
+            <div class="col-7"></div>
+            <div class="col-2">
+                <button id="btnSkipVideo" class="col-8 btn-secondary rounded shadow w-100 p-0" onclick="skipVideo()">Skip Video</button>
             </div>
         </div>
-        <div id="initBtnWrapper" class="row justify-content-center mt-2">
-            <button class="btn-primary btn rounded-pill shadow" onclick="startOrJoin()">
-                <h4 id="txtIsStarted">loading...</h4>
-            </button>
+        <div class="row mt-3 justify-content-center">
+            <div id="queueBox" class="col-8 queuebox border-dark border"></div>
         </div>
-    </div>
-    
 
-    <div class="row mt-6 justify-content-center">
-        <div class="col-8 queuebox border-dark border">
-
+        <div class="row mt-4 justify-content-center">
+            <div class="col-3">
+                <input id="tbVidUrl" class="w-100" type="text" placeholder="URL">
+            </div>
+            <div class="col-3">
+                <input id="tbVidTitle" class="w-100" type="text" placeholder="Title">
+            </div>
+            <div class="col-2">
+                <button id="btnAddToQueue" class="w-100 text-center rounded shadow btn-secondary" onclick="addToQueue()">Add To Queue</button>
+            </div>
         </div>
-    </div>
-
-    <div class="row mt-4 mb-6 justify-content-center">
-        <div class="col-6">
-            <form>
-                <input id="addToQueue" class="w-100" type="text" placeholder="Add To Queue...">
-            </form>
+        <div class="row mt-3 mb-6 justify-content-center">
+            <div id="queueErrorMessage" class="col-8 text-center mb-2 text-danger"></div>
         </div>
-        <div class="col-2">
-            <button class="w-100 text-center" onclick="skipVideo()">Skip Video</button>
-        </div>
-    </div>
     </div>
 
 </body>
