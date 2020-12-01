@@ -36,6 +36,7 @@ function onYouTubeIframeAPIReady() {
     }
   });
 }
+//END SETUP
 
 
 //ELEMENTS
@@ -54,10 +55,7 @@ let playerDiv;
 //END ELEMENTS
 
 
-
-
 //CONNECTION
-let settingPaused = false;
 let setPause = false;
 let loading = false;
 let starting = false;
@@ -77,6 +75,38 @@ socket.on('isStarted', function (data) {
   else {
     txtIsStarted.innerText = "Start";
     initUrlWrapper.classList.remove('d-none');
+  }
+});
+
+socket.on('loadQueue', function (data) {
+  for (let i = 1; i < data.length; i++) {
+    let titleDiv = document.createElement('h5');
+    titleDiv.classList = "mt-2 ml-4"
+    titleDiv.innerText = data[i].title;
+    queueBox.appendChild(titleDiv);
+  }
+});
+
+socket.on('startVideo', function (data) {
+  if (player.loadVideoById) {
+    queuBoxWrapper.classList.remove("d-none");
+    if (!data.state) {
+      starting = true;
+      if (data.videoId) {
+        player.loadVideoById(data.videoId, 0);
+        loading = true;
+      }
+      startVideo();
+    } else {
+      if (data.videoId) {
+        player.loadVideoById(data.videoId, 0);
+        loading = true;
+      }
+      if (data.state != 1) setPause = true;
+      timeToSet = data.time;
+      timeStamp = data.timeStamp;
+      startVideo();
+    }
   }
 });
 
@@ -104,15 +134,6 @@ socket.on('invalidQueueUrl', function () {
   tbVidUrl.value = "";
 });
 
-socket.on('loadQueue', function (data) {
-  for (let i = 1; i < data.length; i++) {
-    let titleDiv = document.createElement('h5');
-    titleDiv.classList = "mt-2 ml-4"
-    titleDiv.innerText = data[i].title;
-    queueBox.appendChild(titleDiv);
-  }
-});
-
 socket.on('videoAddedToQueue', function (data) {
   tbVidTitle.value = "";
   tbVidUrl.value = "";
@@ -129,30 +150,6 @@ socket.on('queueShifted', function () {
 socket.on('pauseVideo', function () {
   recievedPause = true;
   player.pauseVideo();
-});
-
-socket.on('startVideo', function (data) {
-  if (player.loadVideoById) {
-    queuBoxWrapper.classList.remove("d-none");
-    if (!data.state) {
-      starting = true;
-      if (data.videoId) {
-        player.loadVideoById(data.videoId, 0);
-        loading = true;
-      }
-      startVideo();
-    } else {
-      if (data.videoId) {
-        player.loadVideoById(data.videoId, 0);
-        loading = true;
-      }
-      if (data.state != 1) setPause = true;
-      timeToSet = data.time;
-      timeStamp = data.timeStamp;
-      startVideo();
-    }
-  }
-
 });
 
 socket.on('loadNextVideoForHost', function (data) {
@@ -190,8 +187,6 @@ function onPlayerStateChange(event) {
   if (event.data == YT.PlayerState.PLAYING) {
     if (setPause) {
       player.pauseVideo();
-      setPause = false;
-      settingPaused = true;
     }
     if (loading) {
       loading = false;
@@ -199,11 +194,10 @@ function onPlayerStateChange(event) {
     if (timeToSet) {
       let diffence = (Date.now() - timeStamp) / 1000;
       let curTime = timeToSet + diffence;
-      console.log(diffence);
       player.seekTo(curTime, true);
       timeToSet = null;
-      if (!settingPaused) settingTime = true;
-      else settingPaused = false;
+      if (!setPause) settingTime = true;
+      else setPause = false;
       return;
     }
     if (!starting && !settingTime) {
@@ -217,8 +211,6 @@ function onPlayerStateChange(event) {
   if (event.data == YT.PlayerState.ENDED) {
     socket.emit('loadNextVideo');
   }
-
-
 }
 
 function startOrJoin() {

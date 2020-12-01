@@ -1,3 +1,5 @@
+
+//SETUP
 let express = require('express');
 let app = express();
 let serv = require('http').Server(app);
@@ -15,16 +17,19 @@ console.log("server started");
 
 let host = null;
 
+    //list of connections
 let socketList = {};
 
+    //queue of videoId's and titles
 let videoQueue = [];
+//END SETUP
 
-console.log("ID: " + parseYouTubeUrl("black"));
 
+//SOCKET CONNECTION
 io.sockets.on('connection', function (socket) {
 
+    //socket setup
     console.log("socket connected: " + socket.id);
-    console.log(host);
 
     socketList[socket.id] = socket;
 
@@ -33,6 +38,8 @@ io.sockets.on('connection', function (socket) {
     if (host !== null) socket.emit('isStarted', { isStarted: true, userCount: getUserCount(), videoTitle: videoQueue[0].title});
     else socket.emit('isStarted', { isStarted: false });
 
+
+    //remove socket and check host
     socket.on('disconnect', function () {
         delete socketList[socket.id];
         console.log("socket disconnected: " + socket.id);
@@ -53,6 +60,10 @@ io.sockets.on('connection', function (socket) {
         }
     });
 
+
+    //if host exists, get host time for socket
+    //else set init video and set socket as host
+    //launch player
     socket.on('startOrJoin', function (data) {
         if (host === null) {
             let vidId = parseYouTubeUrl(data);
@@ -75,11 +86,15 @@ io.sockets.on('connection', function (socket) {
 
     });
 
+
+    //start video from time recieved by host
     socket.on('recievedHostTime', function (data) {
         if(!socket.joined) return;
         socketList[data.socketId].emit('startVideo', { time: data.time, timeStamp: data.timeStamp, state: data.state, videoId: videoQueue[0].videoId });
     });
 
+
+    //start video for all at time recieved by host
     socket.on('recievedHostTimeForAll', function (data) {
         if(!socket.joined) return;
         for (let socketID in socketList) {
@@ -87,6 +102,8 @@ io.sockets.on('connection', function (socket) {
         }
     });
 
+
+    //pause the video for all
     socket.on('pauseVideo', function () {
         if(!socket.joined) return;
         for (let socketID in socketList) {
@@ -94,6 +111,8 @@ io.sockets.on('connection', function (socket) {
         }
     });
 
+
+    //play the video for all
     socket.on('playVideo', function (data) {
         if(!socket.joined) return;
         for (let socketID in socketList) {
@@ -101,6 +120,8 @@ io.sockets.on('connection', function (socket) {
         }
     });
 
+
+    //start video synced with host (called after new video is loaded)
     socket.on('hostLoadedVideo', function (data) {
         if(!socket.joined) return;
         for (let socketID in socketList) {
@@ -108,6 +129,7 @@ io.sockets.on('connection', function (socket) {
         }
     });
 
+    //shift queue and load next video for host
     socket.on('loadNextVideo', function () {
         if(!socket.joined) return;
         videoQueue.shift();
@@ -119,6 +141,8 @@ io.sockets.on('connection', function (socket) {
 
     });
 
+
+    //add a video to the queue and send update to all
     socket.on('addToQueue', function (data) {
         if(!socket.joined) return;
         let vidId = parseYouTubeUrl(data.url);
@@ -139,7 +163,10 @@ io.sockets.on('connection', function (socket) {
     });
 
 });
+//END SOCKET CONNECTION
 
+
+//HELPER METHODS
 function startFromHostTime(socketId) {
     host.emit('getHostTime', socketId);
 }
@@ -161,3 +188,4 @@ function getUserCount(){
     }
     return count;
 }
+//END HELPER METHODS
