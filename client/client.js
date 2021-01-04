@@ -16,12 +16,12 @@ function onYouTubeIframeAPIReady() {
 
   if (window.innerWidth < 992) {
     player = new YT.Player('player', {
-      height: window.innerWidth * 0.75,
+      height: window.innerWidth * 0.5625,
       width: window.innerWidth,
       videoId: 'H45U4FL_pQM',
       events: {
-        'onReady': onPlayerReady,
-        'onStateChange': onPlayerStateChange
+        'onStateChange': onPlayerStateChange,
+        'onPlaybackRateChange': onPlayerRateChange
       }
     });
     return;
