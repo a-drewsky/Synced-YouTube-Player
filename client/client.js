@@ -16,7 +16,7 @@ function onYouTubeIframeAPIReady() {
 
   if (window.innerWidth < 992) {
     player = new YT.Player('player', {
-      height: window.innerWidth*0.75,
+      height: window.innerWidth * 0.75,
       width: window.innerWidth,
       videoId: 'H45U4FL_pQM',
       events: {
@@ -32,8 +32,8 @@ function onYouTubeIframeAPIReady() {
     width: 2 * (window.innerWidth / 3),
     videoId: 'H45U4FL_pQM',
     events: {
-      'onReady': onPlayerReady,
-      'onStateChange': onPlayerStateChange
+      'onStateChange': onPlayerStateChange,
+      'onPlaybackRateChange': onPlayerRateChange
     }
   });
 }
@@ -52,6 +52,8 @@ let queueBox = document.getElementById("queueBox");
 let initLabelWrapper = document.getElementById("initLabelWrapper");
 let txtInitLabel = document.getElementById("txtInitLabel");
 let queuBoxWrapper = document.getElementById("queuBoxWrapper");
+let username = document.getElementById("username");
+let userBox = document.getElementById("userBox");
 let playerDiv;
 //END ELEMENTS
 
@@ -59,12 +61,13 @@ let playerDiv;
 //CONNECTION
 let setPause = false;
 let loading = false;
-let starting = false;
-let settingTime = false;
 let timeToSet = null;
 let timeStamp = null;
-let recievedPause = false;
+let settingTime = false;
 
+let hostEmit = false;
+
+//Ui
 socket.on('isStarted', function (data) {
   if (data.isStarted) {
     txtIsStarted.innerText = "Join";
@@ -79,35 +82,39 @@ socket.on('isStarted', function (data) {
   }
 });
 
+socket.on('initUserList', function (data) {
+
+  userBox.innerHTML = "";
+
+  document.getElementById('nameWrapper').classList.add('d-none');
+
+  for (let i in data) {
+    let nameItem = document.createElement('div');
+    nameItem.classList = "row mb-2 ml-1 p-0";
+    let circleContainer = document.createElement('div');
+    circleContainer.classList = "col-1  p-2";
+    if (data[i].host == true) {
+      let circle = document.createElement('div');
+      circle.classList = "circle p-0 align-middle";
+      circleContainer.appendChild(circle);
+    }
+    nameItem.appendChild(circleContainer);
+    let nameItemText = document.createElement('div');
+    nameItemText.innerText = data[i].name;
+    nameItemText.classList = "col-10 p-0";
+    nameItem.appendChild(nameItemText);
+    userBox.appendChild(nameItem);
+
+  }
+});
+
 socket.on('loadQueue', function (data) {
+  queueBox.innerHTML = "";
   for (let i = 1; i < data.length; i++) {
     let titleDiv = document.createElement('h5');
     titleDiv.classList = "mt-2 ml-4"
     titleDiv.innerText = data[i].title;
     queueBox.appendChild(titleDiv);
-  }
-});
-
-socket.on('startVideo', function (data) {
-  if (player.loadVideoById) {
-    queuBoxWrapper.classList.remove("d-none");
-    if (!data.state) {
-      starting = true;
-      if (data.videoId) {
-        player.loadVideoById(data.videoId, 0);
-        loading = true;
-      }
-      startVideo();
-    } else {
-      if (data.videoId) {
-        player.loadVideoById(data.videoId, 0);
-        loading = true;
-      }
-      if (data.state != 1) setPause = true;
-      timeToSet = data.time;
-      timeStamp = data.timeStamp;
-      startVideo();
-    }
   }
 });
 
@@ -123,6 +130,10 @@ socket.on('hostDisconnected', function () {
   initUrlWrapper.classList.remove('d-none');
   initLabelWrapper.classList.add('d-none');
   txtIsStarted.innerText = "Start";
+});
+
+socket.on('invalidUsername', function () {
+  errorMessage.innerText = "Invalid Username";
 });
 
 socket.on('invalidUrl', function () {
@@ -144,21 +155,35 @@ socket.on('videoAddedToQueue', function (data) {
   queueBox.appendChild(titleDiv);
 });
 
-socket.on('queueShifted', function () {
-  queueBox.removeChild(queueBox.childNodes[0]);
+
+//Sync
+socket.on('startVideo', function (data) {
+  console.log(data.timeStamp);
+  if (player.loadVideoById) {
+    if (data.videoId) {
+      player.loadVideoById(data.videoId, 0);
+      loading = true;
+    }
+    if (data.state) {
+      if (data.state != 1) setPause = true;
+    }
+    if (data.time) {
+      timeToSet = data.time;
+      timeStamp = data.timeStamp;
+    }
+    startVideo();
+  }
 });
 
 socket.on('pauseVideo', function () {
-  recievedPause = true;
   player.pauseVideo();
 });
 
 socket.on('loadNextVideoForHost', function (data) {
   loading = true;
   player.loadVideoById(data.videoId, 0);
-  socket.emit('hostLoadedVideo', Date.now());
+  hostEmit = true;
 });
-
 
 socket.on('getHostTime', function (data) {
   if (data == "all") {
@@ -171,42 +196,40 @@ socket.on('getHostTime', function (data) {
 
 
 //CONTROLS
-function onPlayerReady(event) {
 
-}
 
 function onPlayerStateChange(event) {
 
   if (event.data == YT.PlayerState.PAUSED) {
-    if (!recievedPause && !loading) socket.emit('pauseVideo');
-    else {
-      recievedPause = false;
-      loading = false;
-    }
+    settingTime = false; -
+      socket.emit('checkHostPaused');
   }
 
   if (event.data == YT.PlayerState.PLAYING) {
-    if (setPause) {
-      player.pauseVideo();
+
+    if (hostEmit) {
+      socket.emit('recievedHostTimeForAll', { time: 0, timeStamp: Date.now(), state: 1 });
+      hostEmit = false;
     }
-    if (loading) {
-      loading = false;
+
+    if (!loading && !settingTime) {
+      socket.emit('syncVideo', { time: player.getCurrentTime(), timeStamp: Date.now });
+      return;
     }
+
+    settingTime = false;
+    loading = false;
+    if (setPause) player.pauseVideo();
+    setPause = false;
+
     if (timeToSet) {
       let diffence = (Date.now() - timeStamp) / 1000;
       let curTime = timeToSet + diffence;
       player.seekTo(curTime, true);
-      timeToSet = null;
-      if (!setPause) settingTime = true;
-      else setPause = false;
-      return;
+      settingTime = true;
     }
-    if (!starting && !settingTime) {
-      socket.emit('playVideo', { time: player.getCurrentTime(), timeStamp: Date.now() });
-      return;
-    }
-    starting = false;
-    settingTime = false;
+    timeToSet = null;
+    timeStamp = null;
   }
 
   if (event.data == YT.PlayerState.ENDED) {
@@ -214,12 +237,18 @@ function onPlayerStateChange(event) {
   }
 }
 
-function startOrJoin() {
-  errorMessage.innerText = "";
-  socket.emit('startOrJoin', initUrl.value);
+function onPlayerRateChange(event) {
+  player.setPlaybackRate(1);
 }
 
+function startOrJoin() {
+  errorMessage.innerText = "";
+  socket.emit('startOrJoin', { url: initUrl.value, username: username.value });
+}
 
+function takeHost() {
+  socket.emit('takeHost');
+}
 
 function skipVideo() {
   socket.emit('loadNextVideo');
@@ -229,7 +258,7 @@ function addToQueue() {
   queueErrorMessage.innerText = "";
   let title = tbVidTitle.value;
   let url = tbVidUrl.value;
-
+  if (title === null || title == "") title = "Video";
   socket.emit('addToQueue', { url: url, title: title });
 }
 //END CONTROLS
@@ -237,11 +266,10 @@ function addToQueue() {
 
 //ACTIONS
 function startVideo() {
-  player.seekTo(0, true);
   player.playVideo();
-  player.setVolume(100);
   document.getElementById('playerWrapper').classList.remove('d-none');
   document.getElementById('initWrapper').classList.add('d-none');
+  queuBoxWrapper.classList.remove("d-none");
   playerDiv = document.getElementById("player");
 
 }

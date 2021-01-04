@@ -18,11 +18,18 @@
 <!--add comments and try using player with controls-->
 
 <body>
+
+
     <div class="container justify-content-center">
 
         <div class="row justify-content-center mt-5">
-            <div class="col-12 text-center">
-                <h1>Joshua's YouTube Player</h1>
+            <div class="col-2 text-center">
+            </div>
+            <div class="col-8 text-center">
+                <h2>Joshua and the YouTube Circle Jerk</h2>
+            </div>
+            <div class="col-2 text-center">
+                version 1.1
             </div>
         </div>
 
@@ -39,19 +46,42 @@
 
                     </div>
                 </div>
-                <div class="col-3 text-center mt-2 d-none d-lg-block">
-                    (double click for full screen)
+            </div>
+
+            <div class="row justify-content-center mt-5">
+                <div class="col-2">
+                    <button id="btnTakeHost" class="btn-warning rounded shadow w-100 p-0" onclick="takeHost()">Take Host Control</button>
+                </div>
+            </div>
+
+            
+            <div class="row justify-content-center mt-4">
+                <div class="col-4 border border-dark p-4">
+                    <div id="userBox" class="overflow-hidden">
+
+                    </div>
                 </div>
             </div>
 
         </div>
 
-        <div id="initWrapper" class="mt-5">
+        <div class="row justify-content-center mt-5">
+            <div id="errorMessage" class="col-8 text-center text-danger"></div>
+        </div>
+
+        <div id="nameWrapper" class="row justify-content-center">
+            <div class="col-4">
+                <form>
+                    <input id="username" class="w-100" type="text" placeholder="username...">
+                </form>
+            </div>
+        </div>
+
+        <div id="initWrapper" class="mt-2">
             <div id="initUrlWrapper" class=" d-none">
-                <div class="row justify-content-center">
-                    <div id="errorMessage" class="col-8 text-center mb-2 text-danger"></div>
-                </div>
-                <div class="row justify-content-center">
+                
+
+                <div class="row justify-content-center mt-4">
                     <div class="col-8">
                         <form>
                             <input id="initUrl" class="w-100" type="text" placeholder="Starting Video...">
@@ -72,7 +102,7 @@
         </div>
 
         <div id="queuBoxWrapper" class="d-none">
-            <div class="row mt-6 justify-content-center">
+            <div class="row mt-3 justify-content-center">
                 <div class="col-lg-7 col-6"></div>
                 <div class="col-lg-2 col-6">
                     <button id="btnSkipVideo" class="col-8 btn-secondary rounded shadow w-100 p-0" onclick="skipVideo()">Skip Video</button>
@@ -84,10 +114,10 @@
     
             <div class="row justify-content-center">
                 <div class="col-lg-3 col-12 mt-4">
-                    <input id="tbVidUrl" class="w-100" type="text" placeholder="URL">
+                    <input id="tbVidUrl" class="w-100" type="text" placeholder="Video URL">
                 </div>
                 <div class="col-lg-3 col-12 mt-4">
-                    <input id="tbVidTitle" class="w-100" type="text" placeholder="Title">
+                    <input id="tbVidTitle" class="w-100" type="text" placeholder="Display Name">
                 </div>
                 <div class="col-lg-2 col-8 mt-4">
                     <button id="btnAddToQueue" class="w-100 text-center rounded shadow btn-secondary" onclick="addToQueue()">Add To Queue</button>

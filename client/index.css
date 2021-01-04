@@ -34,3 +34,11 @@
     width: 100px;
     cursor: e-resize;
 }
+
+.circle{
+    width: 10px;
+    height: 10px;
+    background: green;
+    border-radius: 50%;
+    vertical-align: middle;
+}

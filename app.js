@@ -17,10 +17,10 @@ console.log("server started");
 
 let host = null;
 
-    //list of connections
+//list of connections
 let socketList = {};
 
-    //queue of videoId's and titles
+//queue of videoId's and titles
 let videoQueue = [];
 //END SETUP
 
@@ -48,16 +48,10 @@ io.sockets.on('connection', function (socket) {
             for (let socketID in socketList) {
                 if (socketID != socket.id) socketList[socketID].emit('hostDisconnected');
             }
-            for (let socketID in socketList) {
-                if (socketID != socket.id && socketList[socketID].joined) {
-                    host = socketList[socketID];
-                    console.log(host.id);
-                    setNewHost();
-                    return
-                }
-            }
-            videoQueue = [];
+            setNewHost();
+            return;
         }
+        updateUserList();
     });
 
 
@@ -65,8 +59,15 @@ io.sockets.on('connection', function (socket) {
     //else set init video and set socket as host
     //launch player
     socket.on('startOrJoin', function (data) {
+        if(data.username===null || data.username==""){
+            socket.emit('invalidUsername');
+            return;
+        } else {
+            socket.username = data.username;
+        }
+
         if (host === null) {
-            let vidId = parseYouTubeUrl(data);
+            let vidId = parseYouTubeUrl(data.url);
             if (vidId == false) {
                 socket.emit('invalidUrl');
                 return;
@@ -83,7 +84,16 @@ io.sockets.on('connection', function (socket) {
             socket.emit('loadQueue', videoQueue);
             startFromHostTime(socket.id);
         }
+        updateUserList();
+    });
 
+
+    socket.on('checkHostPaused', function(){
+        if(socket.id == host.id){
+            for (let socketID in socketList) {
+                if (socketID != socket.id && socketList[socketID].joined) socketList[socketID].emit('pauseVideo');
+            }
+        }
     });
 
 
@@ -103,38 +113,22 @@ io.sockets.on('connection', function (socket) {
     });
 
 
-    //pause the video for all
-    socket.on('pauseVideo', function () {
-        if(!socket.joined) return;
-        for (let socketID in socketList) {
-            if (socketID != socket.id && socketList[socketID].joined) socketList[socketID].emit('pauseVideo');
+    socket.on('syncVideo', function(data){
+        console.log("act")
+        if(host.id != socket.id) startFromHostTime(socket.id);
+        else{
+            for (let socketID in socketList) {
+                if (socketID != socket.id && socketList[socketID].joined) socketList[socketID].emit('startVideo', { time: data.time, timeStamp: data.timeStamp, state: 1 });
+            }
         }
     });
 
-
-    //play the video for all
-    socket.on('playVideo', function (data) {
-        if(!socket.joined) return;
-        for (let socketID in socketList) {
-            if (socketID != socket.id && socketList[socketID].joined) socketList[socketID].emit('startVideo', { time: data.time, timeStamp: data.timeStamp, state: 1 });
-        }
-    });
-
-
-    //start video synced with host (called after new video is loaded)
-    socket.on('hostLoadedVideo', function (data) {
-        if(!socket.joined) return;
-        for (let socketID in socketList) {
-            if (socketID != host.id && socketList[socketID].joined) socketList[socketID].emit('startVideo', { videoId: videoQueue[0], time: 0, timeStap: data, state: 1 });
-        }
-    });
 
     //shift queue and load next video for host
     socket.on('loadNextVideo', function () {
-        if(!socket.joined) return;
         videoQueue.shift();
         for (let socketID in socketList) {
-            if (socketList[socketID].joined) socketList[socketID].emit('queueShifted');
+            if (socketList[socketID].joined) socketList[socketID].emit('loadQueue', videoQueue);
         }
         
         if(videoQueue.length>0) host.emit('loadNextVideoForHost', { videoId: videoQueue[0].videoId });
@@ -158,8 +152,14 @@ io.sockets.on('connection', function (socket) {
             } else {
                 host.emit('loadNextVideoForHost', { videoId: videoQueue[0].videoId });
             }
-
         }
+    });
+
+    socket.on('takeHost', function(){
+        if(socket.id == host.id) return;
+        host = socket;
+        host.emit('getHostTime', "all");
+        updateUserList();
     });
 
 });
@@ -167,12 +167,33 @@ io.sockets.on('connection', function (socket) {
 
 
 //HELPER METHODS
+function updateUserList(){
+    let userList = [];
+    for (let socketID in socketList) {
+        if(socketList[socketID].joined) userList.push({name: socketList[socketID].username, host: socketID==host.id});
+    }
+    for (let socketID in socketList) {
+        if (socketList[socketID].joined) {
+            socketList[socketID].emit('initUserList', userList);
+        }
+    }
+}
+
 function startFromHostTime(socketId) {
     host.emit('getHostTime', socketId);
 }
 
 function setNewHost() {
-    host.emit('getHostTime', "all");
+    for (let socketID in socketList) {
+        if (socketList[socketID].joined) {
+            host = socketList[socketID];
+            host.emit('getHostTime', "all");
+            updateUserList();
+            return
+        }
+    }
+
+    videoQueue = [];
 }
 
 function parseYouTubeUrl(url) {
