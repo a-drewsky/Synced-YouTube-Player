@@ -35,10 +35,26 @@
     cursor: e-resize;
 }
 
-.circle{
+.greenCircle{
     width: 10px;
     height: 10px;
     background: green;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.orangeCircle{
+    width: 10px;
+    height: 10px;
+    background: orange;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.redCircle{
+    width: 10px;
+    height: 10px;
+    background: red;
     border-radius: 50%;
     vertical-align: middle;
 }

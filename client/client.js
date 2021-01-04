@@ -54,6 +54,7 @@ let txtInitLabel = document.getElementById("txtInitLabel");
 let queuBoxWrapper = document.getElementById("queuBoxWrapper");
 let username = document.getElementById("username");
 let userBox = document.getElementById("userBox");
+let btnPlayPauseAll = document.getElementById("btnPlayPauseAll");
 let playerDiv;
 //END ELEMENTS
 
@@ -89,13 +90,24 @@ socket.on('initUserList', function (data) {
   document.getElementById('nameWrapper').classList.add('d-none');
 
   for (let i in data) {
+    console.log(data[i].self)
     let nameItem = document.createElement('div');
     nameItem.classList = "row mb-2 ml-1 p-0";
     let circleContainer = document.createElement('div');
     circleContainer.classList = "col-1  p-2";
-    if (data[i].host == true) {
+    if (!data[i].host && data[i].self) {
       let circle = document.createElement('div');
-      circle.classList = "circle p-0 align-middle";
+      circle.classList = "greenCircle p-0 align-middle";
+      circleContainer.appendChild(circle);
+    }
+    else if (data[i].host && !data[i].self) {
+      let circle = document.createElement('div');
+      circle.classList = "orangeCircle p-0 align-middle";
+      circleContainer.appendChild(circle);
+    }
+    else if (data[i].host && data[i].self) {
+      let circle = document.createElement('div');
+      circle.classList = "redCircle p-0 align-middle";
       circleContainer.appendChild(circle);
     }
     nameItem.appendChild(circleContainer);
@@ -158,7 +170,7 @@ socket.on('videoAddedToQueue', function (data) {
 
 //Sync
 socket.on('startVideo', function (data) {
-  console.log(data.timeStamp);
+  btnPlayPauseAll.innerText = "Pause All";
   if (player.loadVideoById) {
     if (data.videoId) {
       player.loadVideoById(data.videoId, 0);
@@ -176,7 +188,18 @@ socket.on('startVideo', function (data) {
 });
 
 socket.on('pauseVideo', function () {
+  btnPlayPauseAll.innerText = "Play All";
   player.pauseVideo();
+});
+
+socket.on('playPauseHost', function(){
+  if(player.getPlayerState()==1){
+    player.pauseVideo();
+    btnPlayPauseAll.innerText = "Play All";
+  } else {
+    player.playVideo();
+    btnPlayPauseAll.innerText = "Pause All";
+  }
 });
 
 socket.on('loadNextVideoForHost', function (data) {
@@ -252,6 +275,10 @@ function takeHost() {
 
 function skipVideo() {
   socket.emit('loadNextVideo');
+}
+
+function playPauseAll(){
+  socket.emit('playPauseAll');
 }
 
 function addToQueue() {
