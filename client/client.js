@@ -192,8 +192,8 @@ socket.on('pauseVideo', function () {
   player.pauseVideo();
 });
 
-socket.on('playPauseHost', function(){
-  if(player.getPlayerState()==1){
+socket.on('playPauseHost', function () {
+  if (player.getPlayerState() == 1) {
     player.pauseVideo();
     btnPlayPauseAll.innerText = "Play All";
   } else {
@@ -242,7 +242,10 @@ function onPlayerStateChange(event) {
 
     settingTime = false;
     loading = false;
-    if (setPause) player.pauseVideo();
+    if (setPause) {
+      player.pauseVideo();
+      btnPlayPauseAll.innerText = "Play All";
+    }
     setPause = false;
 
     if (timeToSet) {
@@ -277,7 +280,7 @@ function skipVideo() {
   socket.emit('loadNextVideo');
 }
 
-function playPauseAll(){
+function playPauseAll() {
   socket.emit('playPauseAll');
 }
 
