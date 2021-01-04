@@ -70,6 +70,11 @@ let hostEmit = false;
 
 //Ui
 socket.on('isStarted', function (data) {
+
+  document.getElementById('playerWrapper').classList.add('d-none');
+  document.getElementById('initWrapper').classList.remove('d-none');
+  queuBoxWrapper.classList.add("d-none");
+
   if (data.isStarted) {
     txtIsStarted.innerText = "Join";
     initLabelWrapper.classList.remove('d-none');

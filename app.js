@@ -33,12 +33,10 @@ io.sockets.on('connection', function (socket) {
 
     socketList[socket.id] = socket;
 
-    if (!socket.joined) {
-        if (host !== null) socket.emit('isStarted', { isStarted: true, userCount: getUserCount(), videoTitle: videoQueue[0].title });
-        else socket.emit('isStarted', { isStarted: false });
-    } else {
-        updateUserList();
-    }
+
+    if (host !== null) socket.emit('isStarted', { isStarted: true, userCount: getUserCount(), videoTitle: videoQueue[0].title });
+    else socket.emit('isStarted', { isStarted: false });
+
     socket.joined = false;
 
     //remove socket and check host
@@ -179,7 +177,7 @@ function updateUserList() {
 
             let userList = [];
             for (let socketID2 in socketList) {
-                if (socketList[socketID2].joined) userList.push({ name: socketList[socketID2].username, host: socketID2 == host.id, self: socketID == socketID2 });
+                if (socketList[socketID2].joined) userList.push({ name: socketList[socketID2].username, host: socketID2 == host.id, self: socketID == socketID2});
             }
 
             socketList[socketID].emit('initUserList', userList);
