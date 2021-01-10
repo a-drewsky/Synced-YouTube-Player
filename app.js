@@ -130,12 +130,14 @@ io.sockets.on('connection', function (socket) {
 
     //shift queue and load next video for host
     socket.on('loadNextVideo', function () {
-        videoQueue.shift();
         for (let socketID in socketList) {
             if (socketList[socketID].joined) socketList[socketID].emit('loadQueue', videoQueue);
         }
 
-        if (videoQueue.length > 0) host.emit('loadNextVideoForHost', { videoId: videoQueue[0].videoId });
+        if (videoQueue.length > 1){
+            videoQueue.shift();
+            host.emit('loadNextVideoForHost', { videoId: videoQueue[0].videoId });
+        } 
 
     });
 

@@ -229,8 +229,8 @@ socket.on('getHostTime', function (data) {
 function onPlayerStateChange(event) {
 
   if (event.data == YT.PlayerState.PAUSED) {
-    settingTime = false; -
-      socket.emit('checkHostPaused');
+    settingTime = false;
+    socket.emit('checkHostPaused');
   }
 
   if (event.data == YT.PlayerState.PLAYING) {
@@ -239,6 +239,9 @@ function onPlayerStateChange(event) {
       socket.emit('recievedHostTimeForAll', { time: 0, timeStamp: Date.now(), state: 1 });
       hostEmit = false;
     }
+
+    console.log("loading: " + loading);
+    console.log("settingTime: " + settingTime);
 
     if (!loading && !settingTime) {
       socket.emit('syncVideo', { time: player.getCurrentTime(), timeStamp: Date.now });
