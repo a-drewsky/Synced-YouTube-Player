@@ -172,6 +172,14 @@ socket.on('videoAddedToQueue', function (data) {
   queueBox.appendChild(titleDiv);
 });
 
+socket.on('textPlay', function(){
+  btnPlayPauseAll.innerText = "Play All";
+});
+
+socket.on('textPause', function(){
+  btnPlayPauseAll.innerText = "Pause All";
+});
+
 
 //Sync
 socket.on('startVideo', function (data) {

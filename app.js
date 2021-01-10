@@ -90,6 +90,7 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('checkHostPaused', function () {
         if (socket.id == host.id) {
+            host.emit('textPlay');
             for (let socketID in socketList) {
                 if (socketID != socket.id && socketList[socketID].joined) socketList[socketID].emit('pauseVideo');
             }
@@ -119,7 +120,10 @@ io.sockets.on('connection', function (socket) {
 
 
     socket.on('syncVideo', function (data) {
-        if (host.id != socket.id) startFromHostTime(socket.id);
+        if (host.id != socket.id){
+            startFromHostTime(socket.id);
+            host.emit('textPause');
+        } 
         else {
             for (let socketID in socketList) {
                 if (socketID != socket.id && socketList[socketID].joined) socketList[socketID].emit('startVideo', { time: data.time, timeStamp: data.timeStamp, state: 1 });
