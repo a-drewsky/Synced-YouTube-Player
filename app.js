@@ -130,14 +130,15 @@ io.sockets.on('connection', function (socket) {
 
     //shift queue and load next video for host
     socket.on('loadNextVideo', function () {
-        for (let socketID in socketList) {
-            if (socketList[socketID].joined) socketList[socketID].emit('loadQueue', videoQueue);
-        }
 
-        if (videoQueue.length > 1){
+        if (videoQueue.length > 1) {
             videoQueue.shift();
             host.emit('loadNextVideoForHost', { videoId: videoQueue[0].videoId });
-        } 
+
+            for (let socketID in socketList) {
+                if (socketList[socketID].joined) socketList[socketID].emit('loadQueue', videoQueue);
+            }
+        }
 
     });
 
@@ -179,7 +180,7 @@ function updateUserList() {
 
             let userList = [];
             for (let socketID2 in socketList) {
-                if (socketList[socketID2].joined) userList.push({ name: socketList[socketID2].username, host: socketID2 == host.id, self: socketID == socketID2});
+                if (socketList[socketID2].joined) userList.push({ name: socketList[socketID2].username, host: socketID2 == host.id, self: socketID == socketID2 });
             }
 
             socketList[socketID].emit('initUserList', userList);
